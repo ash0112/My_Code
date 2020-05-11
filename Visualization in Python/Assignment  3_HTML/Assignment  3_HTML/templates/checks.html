@@ -1,0 +1,13 @@
+<html>
+    <head>
+        <title>List of County Councils</title>
+        <link rel="stylesheet" href="/static/county.css" />
+    </head>
+    <body>
+        <form action="/processchecks" method="POST">
+            {{ data | safe }}
+            <input type="submit" value="Select Countys">
+            <input type="reset" value="Clear">
+        </form>
+    </body>
+</html>
