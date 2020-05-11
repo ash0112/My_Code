@@ -1,0 +1,447 @@
+---
+title: "Multiple Regression"
+author: "Ashwin V Pillai"
+date: "11/05/2020"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Multiple Regression
+
+Multiple linear regression is an extension of simple linear regression used to predict an outcome variable (y) on the basis of multiple distinct predictor variables (x).
+
+
+
+## Adding the necessary libraries
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(anytime)
+library(skimr)
+```
+
+
+
+## Importing the dataset and converting the columns into the required formats
+
+```{r}
+sample <- read.csv('GlobalTemp1.csv')
+#sample
+#str(sample)
+#sample$dt <- as.character(sample$dt)
+sample$dt <- anytime(as.character(sample$dt))
+sample$State <- as.character(sample$State)
+sample$Country <- as.character(sample$Country)
+str(sample)
+
+```
+
+
+
+## Overview of the dataset
+
+Providing a broad overview of a data frame. It handles data of all types, dispatching a different set of summary functions based on the types of columns in the data frame.
+
+
+```{r}
+skim(sample)
+```
+
+
+## List of the unique State name of India from the dataset
+
+```{r}
+State_name <- unique(sample$State)
+```
+
+
+
+
+## Exploring the data ( Average Temperature and the States )
+
+```{r}
+ggplot(sample, aes(AverageTemperature, State))+geom_point()
+hist((sample$AverageTemperature))
+```
+
+
+We create the regression model using the lm() function in R. The model determines the value of the coefficients using the input data.
+
+
+## Considering the significance of the AverageTemperatureUncertainty variable in the model.
+
+### Note: Even though the variable is having a high significance in the model, it is only providing 7.7% variable contribution to the model.
+
+
+
+```{r}
+testing <- lm(AverageTemperature ~ AverageTemperatureUncertainty, data = sample)
+testing
+summary(testing)
+```
+
+
+## Considering the significance of the AverageTemperatureUncertainty along with the State variable in the model.
+
+### Note: This model shows 66.44% of variable contribution to the model.
+
+
+```{r}
+results <- lm(AverageTemperature ~ State + AverageTemperatureUncertainty, data = sample)
+results
+summary(results)
+```
+
+
+As we are considering two independent variables, the prediction of y is expressed by the following equation:
+
+y = b0 + b1*x1 + b2*x2
+
+As the difference between Adjusted r-squared  and Multiple R-squared value is 0.002(0.2%) the model is derived from the population rather from the sample. The above summary shows that the p-values of all variables are highly significant.
+
+
+
+## Giving the variance analysis of each of the indipedent variable 
+
+```{r}
+anova(results)
+```
+
+As the F-value of the above model which is obtained from the ANOVA test is large (>>1), it states that the model fits the data better with the independent variables rather than just the intercept value. Hence we can reject the Null Hypothesis.
+
+
+## Comparison between two different models
+
+
+```{r}
+reduced <- lm(AverageTemperature ~ AverageTemperatureUncertainty, data = sample)
+full <- lm(AverageTemperature ~ State + AverageTemperatureUncertainty, data = sample)
+anova(reduced, full)
+```
+
+
+The above comparison shows that by including the State variable in the model, the Pr(>F) = 2.2 with the decimal place moved 16 places to the left and it significantly fits the dataset.
+
+
+# Providing a brief overview of the complete dataset along with the columns
+
+
+```{r}
+library(pastecs)
+library(psych)
+```
+
+```{r}
+describe(sample)
+```
+
+
+
+## Confidence Intervals for all the input parameters in the above model. It gives both lower and upper confidence limits
+
+
+```{r}
+
+confint(results)
+
+```
+
+
+## Calculating the Residual and Standardised residual values for the dataset.
+
+
+```{r}
+sample$residuals<-resid(results)
+sample$standardised.residuals<-rstandard(results)
+sample$studentised.residuals<-rstudent(results)
+
+```
+
+
+
+```{r}
+write.csv(sample, 'Analysis.csv')
+```
+
+
+```{r}
+sample_analysis <- read.csv('Analysis.csv')
+```
+
+
+
+## Checking the residuals and outliers of the dataset and the accuracy of the model
+
+
+
+```{r}
+sample_analysis$large.residual<-sample_analysis$standardised.residuals>2|sample_analysis$standardised.residuals< -2
+```
+
+```{r}
+sample_case1 <- sample_analysis %>%
+  filter(standardised.residuals >2 | standardised.residuals < -2)
+```
+
+
+There are 259 records having the standardised residuals greater than 2 (theoretical value = 1.96) which is around 4.6% of records. This shows that the model is a good representation of the actual data.
+
+
+
+```{r}
+sample_case2 <- sample_analysis%>%
+  filter(standardised.residuals >2.5|standardised.residuals < -2.5)
+```
+
+
+
+As shown above, 51 of the 5576 (0.01~1%) records lie outside the  +/- 2.5 standardised residuals mark (theoretical valus of 2.58). This shows that the model is a good fit for the data.
+
+
+---INFLUENTIAL CASES---
+
+```{r}
+sample_analysis$cooks.distance<-cooks.distance(results)
+```
+
+```{r}
+sample_analysis$dffit<-dffits(results)
+sample_analysis$dfbeta<-dfbeta(results)
+sample_analysis$leverage<-hatvalues(results)
+sample_analysis$covariance.ratios<-covratio(results)
+
+```
+
+
+## Accuracy of the model is decided by Cook's distance.
+
+
+```{r}
+glimpse(sample_analysis)
+```
+
+
+Note:
+1) None of the following has a *cooks.distance >1*. Hence none of the cases is having an undue influence on the model.
+2) As the Covariance ratios (CVR) is close to 1, the case is having very little influence on the variance of the model.
+
+
+
+
+```{r}
+sample_cases <- sample_analysis%>%
+  filter(standardised.residuals >2|standardised.residuals < -2)
+
+```
+
+
+
+
+```{r}
+sample_cases <- sample_cases[, c("X","residuals","standardised.residuals", "cooks.distance", "leverage", "covariance.ratios")]
+```
+
+
+```{r}
+sample_cases <- round(sample_cases,3 )
+
+```
+
+
+
+```{r}
+value <- sample_analysis%>%
+  filter(standardised.residuals >3|standardised.residuals < -3)
+
+```
+
+
+We have 3 records which are having standardised residuals value greater than 3 (Record no - 2393, 2441, 4397)
+
+
+
+================================================================================
+
+================================================================================
+
+
+## The Durbin-Watson(D-W) test 
+
+This test is mainly used to measure the autocorrelation in residuals from regression analysis
+Null Hypothesis (H0): the autocorrelation of the disturbances is 0.
+
+
+```{r}
+library(car)
+```
+
+```{r}
+dwt(results)
+```
+
+
+
+Result: As the value from the DW test (D-W Statistic) is less than 1, there exists a correlation between the variables.
+        Due to the large sample sizes the algorithm might fail to compute the p value.
+
+
+
+
+===============================================================================
+
+===============================================================================
+
+## Variance Inflation Factor(VIF)
+
+This test is used to determine any linear relationship between the predictors.
+
+```{r}
+vif(results)
+```
+
+
+
+```{r}
+1/vif(results)
+```
+
+
+As the VIF value is not greater than 10 and tolerance statistics is above 0.2, we ca conclude that there is no collinearity within our data.
+
+
+
+```{r}
+mean(vif(results))
+```
+
+Note: As the mean VIF value is larger than 1, regression may be biased.
+
+
+==============================================================================
+
+==============================================================================
+
+
+
+## The predicted (fitted) value from the model.
+
+
+```{r}
+sample$fitted <- results$fitted.values
+head(sample[c(2,4,6,7,9)])
+```
+
+
+```{r}
+names(sample)
+names(sample_analysis)
+```
+
+```{r}
+sample$studentised.residuals<-sample_analysis$studentised.residuals
+head(sample)
+```
+
+
+
+
+
+## Scatterplot of studentized residuals against predicted values:
+
+
+```{r}
+scatterStudRes<-ggplot(sample, aes(fitted, studentised.residuals))
+```
+
+
+
+```{r}
+scatterStudRes+geom_point()+geom_smooth(method="lm", colour="Blue") + labs(x="Fitted Values", y="Studentized Residual")
+```
+
+
+```{r}
+histogram<-ggplot(sample, aes(studentised.residuals))
+```
+
+
+
+```{r}
+histogram + geom_histogram()
+```
+
+
+## stat_function() - draws a normal curve using the function dnorm
+
+
+```{r}
+histogram + stat_function(fun=dnorm, args = list(mean= mean(sample$studentised.residuals, na.rm = TRUE), 
+                                                 sd= sd(sample$studentised.residuals, na.rm = TRUE)), 
+                          colour = "red", size =1)
+```
+
+
+```{r}
+histogram+geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  labs(x="Studentised Residual", y= "Density") +
+  stat_function(fun=dnorm, args = list(mean= mean(sample$studentised.residuals, na.rm = TRUE), 
+                                       sd= sd(sample$studentised.residuals, na.rm = TRUE)), 
+                colour = "red", size =1)
+```
+
+
+
+
+```{r}
+qqplot.resid<-qplot(sample=sample$studentised.residuals, stat="qq") + 
+  labs(x="Theoretical Values", y= "Observed Values")
+```
+
+
+
+```{r}
+qqplot.resid
+```
+
+
+
+As the Quantile plot is a straight line, it indicates that the distribution is Normal and is a good match between the data and a Normal distribution. 
+
+
+
+
+## Using the predict function from R, I was able to predict outcome for new observations based on the above model.
+
+
+
+```{r}
+for (x in State_name){
+  
+  new <- data.frame(State = x , AverageTemperatureUncertainty = 0.5)
+  print(x)
+  print(predict(results, new, interval = 'confidence'))
+  print('********************************')
+ 
+  
+}
+
+```
+
+
+
+## Conclusion:
+
+For the dataset, I executed a Multiple regression process using 'State' and 'Average Temperature Uncertainty' as the independent variables. These variables were able to provide  66.44% of the contribution to the model. The p-value for each of these variables shows that they are highly significant.
+With the help of the ANOVA function, I was able to compare two different models and their F-value. From this value, I was able to Reject the Null Hypothesis (All the Regression coefficients are equal to zero).
+Examination of the residuals and Standard residual values of the dataset showed that 4.6% of the records (259 of the 5576 records) are having standard residuals greater than 2 and 1% of the records (51 of the 5576 records) are having values greater than 2.5. This helped in proving that the model is a good fit to the actual data.
+The model's accuracy was calculated using Cook's distance (As none of the records had a distance greater than 1). The normality of the data has 
+also been confirmed using the Quantile Plot.
+Shortcomings:
+The existence of the correlation between the data set variables has been confirmed based on the results from the D-W test. The VIF test also verified that regression can be biased (as the mean(vif) value exceeded 1).
