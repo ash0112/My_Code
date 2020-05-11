@@ -1,0 +1,424 @@
+---
+title: "Dashboard regarding FIFA data"
+author: 'Ashwin Vijayan Pillai'
+date: "29/04/2020"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    source_code: embed
+    storyboard: true
+runtime: shiny
+---
+
+
+
+
+```{r setup, include=FALSE}
+
+# Including all the necessary libraries.
+
+library(flexdashboard)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(forcats)
+library(highcharter)
+library(openintro)
+```
+
+
+ 
+ 
+
+```{r}
+mydata <- read.csv("dataset1.csv") # Importing the Fédération Internationale de Football Association (FIFA) dataset.
+
+# Converting all the necessary variables into the required type.
+
+mydata$Country <- as.character(mydata$Country)
+mydata$Club <- as.character(mydata$Club)
+mydata$Value <- as.numeric(as.character(mydata$Value))
+mydata$Country_code <- as.character(mydata$Country_code)
+
+# We created Players_leftfoot dataframe which includes all the International players who prefer their Left foot.
+
+Players_leftfoot <- mydata%>%
+  filter(Preferred.Foot == 'Left')
+
+# Similarly we created Players_rigthfoot, dataframe with players who prefer their Right foot.
+
+Players_rightfoot <- mydata%>%
+  filter(Preferred.Foot == 'Right')
+
+# Creating a dataframe which includes players from England and Ireland.
+
+Players_place <- mydata%>%
+  filter(Country%in% c("England","Republic of Ireland"))
+
+# Creating a list of interested colors.
+
+mycolor = c("aquamarine","yellowgreen","coral","#009999","#9999FF","#808080","#FF6666")
+
+
+```
+
+
+
+Outline
+=============================================================================
+
+Column {data-orientation = columns}
+---------------------------------------------------------
+
+```{r}
+
+
+# Showing the structure of my dataset.
+
+str(mydata)
+```
+
+
+### No of International FIFA players
+
+```{r}
+
+# Valuebox which show the total number of records in my dataset (mydata)
+
+valueBox(length(mydata$Age),
+        icon = "fa-futbol",
+        href = "#dataset")
+
+```
+
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Average Age 
+
+```{r}
+
+# Valuebox which shows the Average age of the International FIFA players.
+
+avg_age <- round(mean(mydata$Age),0)
+
+valueBox(avg_age,
+         icon = "fa-tachometer",
+         color = "primary")
+```
+
+### Number of England and Ireland Football Players
+
+```{r}
+# Valuebox showing the number of players fro ENgland and Ireland.
+
+valueBox(length(Players_place$Name),
+        icon = "fa-plane",
+        color = "coral")
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Range of FIFA Ratings
+
+```{r}
+
+# It shows the range of the FIFA ratings from minimum to maximum and highlighting the average rating.
+
+gauge (round(mean(mydata$Overall),
+            digits = 2),
+            min = 46,
+            max = 94,
+            gaugeSectors(danger = c(46,60),
+                         warning = c(60,80),
+                         success = c(80,94),
+                         colors = c('red','yellow','green')))
+```
+
+### Number of Left Foot players
+
+```{r}
+
+# Valuebox showing the number of players who prefer their Left foot.
+
+valueBox(length(Players_leftfoot$Name),
+         icon = "fa-shoe-prints",
+         color = "green",
+          href = "#dataset1")
+
+```
+
+### Number of Right Foot players
+
+```{r}
+
+# Valuebox showing the number of players who prefer their Right foot.
+
+valueBox(length(Players_rightfoot$Name),
+         icon = "fa-shoe-prints",
+         color = "green",
+         href = "#dataset2")
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Range of weights for Internal players
+
+```{r}
+
+# It shows the range of weights in pounds of all the players. It shows the minimum, maximum and average weight of all the players.
+
+gauge (round(mean(mydata$Weight.lbs.),
+            digits = 2),
+            min = 110,
+            max = 243,
+            gaugeSectors(warning = c(110, 150),
+                         success = c(150,200),
+                         danger = c(200,243),
+                         colors = c('green','orange','red')))
+
+
+
+```
+
+
+
+
+Highcharter Bar Chart
+=======================================================================
+
+Row
+--------------------------------------------------------------------------
+### Number of Players from each country
+```{r}
+
+# Bar plot which shows the number of players from each country.
+
+p1 <- mydata%>%
+  group_by(Country)%>%
+  summarise(count = n())%>%
+  plot_ly(x = ~Country,
+          y = ~count,
+          color = ~Country,
+          type = 'bar')%>%
+  layout(xaxis = list(title = "Country"),
+         yaxis = list(title = "Number of Players"))
+
+p1
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Comparison between the top English, Germany and Spain clubs
+
+```{r}
+# Here we have considered the top clubs from English, Germany and Spain and compared the total number of players in them.
+
+# Here are the list of clubs that have been included:
+# England - Liverpool, Manchester City, Manchester United, Chelsea.
+# Germany - FC Bayern Munchen, Borussia Dortmund, Bayer 04 Leverkusen, RB Leipzig.
+# Spain - FC Barcelona, Atletico Madrid, Real Madrid, Valencia CF.
+
+
+New_barplot <- mydata%>%
+  filter(Club%in%c("Liverpool","Manchester City","Manchester United","Chelsea","FC Barcelona","Atletico Madrid","Real Madrid",
+                   "Valencia CF","FC Bayern Munchen","Borussia Dortmund","Bayer 04 Leverkusen","RB Leipzig"))%>%
+  group_by(Club)%>%
+  summarise(Total = n())%>%
+  arrange(desc(Total))
+
+# Introducing a new column to the above created dataframe.
+
+New_barplot$Country = c("Spain","Germany","England","England","England","Spain","Spain","England","Germany","Germany")
+
+
+New_barplot%>%
+  plot_ly(x = ~Country,
+          y = ~Total,
+          color = ~Country,
+          type = 'bar')%>%
+  layout(xaxis = list(title = "Country"),
+         yaxis = list(title = "Number of Players"))
+
+```
+
+
+
+### Skill set of Right and Left foot players
+
+```{r}
+
+# We are comparing the different skills (Crossing, Finishing, Dribbling, Penalties) of different players by categorising them based on their preferred foot.
+
+data <- mydata%>%
+  select("Country","Preferred.Foot","Crossing","Finishing","Dribbling","Penalties")
+fig <- plot_ly(data, x = data$Preferred.Foot , y = data$Crossing, type = 'bar', name = "Crossing", color = "#00FF00")
+fig <- fig %>% add_trace(y = data$Finishing, name = 'Finishing', color = "#FF9999")
+fig <- fig %>% add_trace(y = data$Dribbling, name = 'Dribbling', color = "#FF6666")
+fig <- fig %>% add_trace(y = data$Penalties, name = 'Penalties', color = "#009933")
+
+fig
+```
+
+Pie Chart
+=================================================================
+
+### Countries having more than 700 International players
+
+```{r}
+# We are preparing a Pie chart which includes only the countries who is having more than 700 International players.
+
+p2 <- mydata%>%
+  group_by(Country)%>%
+  summarise(count = n())%>%
+  filter(count>700)%>%
+  plot_ly(labels = ~Country,
+          values = ~count,
+          marker = list(colors = mycolor))%>%
+  add_pie(hole = 0.4)%>%
+  layout(xaxis = list(zeroline = F,
+                      showline = F,
+                      showticklabels = F,
+                      showgrid = F))
+
+p2
+
+```
+
+
+Highcharter Scatterplot
+====================================================================
+
+### Note : Please refresh the Scatter plot tab after it opens in dashboard.
+
+ The Club's which spent the most
+
+```{r}
+
+# We are summarising the value spent in (in Euro millions) by each club and plotting them using a Scatter plot.
+# The size of the plot depends on the amount they have spent.
+
+Pay <- mydata%>%
+  filter(!is.na(Value))%>%
+  group_by(Club)%>%
+  summarise(Total.sum = sum(Value))%>%
+  arrange(desc(Total.sum))
+
+p3 <- Pay%>%
+  #filter(Total.sum > 500)%>%
+  plot_ly (x = ~Club,
+          y = ~Total.sum,
+          color = ~Total.sum,
+          type = 'scatter', size = ~Total.sum)%>%
+  layout(xaxis = list(title = "Club"),
+         yaxis = list(title = "Total amount spent in millions"))
+
+p3
+```
+
+Highcharter Treemap
+=======================================================================
+
+### Clubs which have the top rated players
+
+```{r}
+
+# Here we are using the TreemMap plot to show the clubs who have the large number of international players with FIFA ratings above 80.
+
+mydata%>%
+  filter(mydata$Overall > 80)%>%
+  group_by(Club)%>%
+  summarise(count = n())%>%
+  arrange(desc(count))%>%
+hchart(type = "treemap",
+       hcaes(x = Club, value= count, color = count))
+
+
+
+```
+
+
+dataset
+===================================================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+
+```{r}
+
+# Showing the dataset based on the selected Country and the Preferred foot details. Also once opened in browser, we would be able to download the dataset in either CSV, Excel or PDF format.
+
+selectInput ("Country", label = "Please select the Country: ",
+            choices = mydata$Country, selected = 20)
+
+selectInput ("Preferred_Foot", label = "Please select preferred foot : ",
+            choices = c('Left','Right'))
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+```{r}
+renderDT({datatable(mydata%>%filter(Country == input$Country & Preferred.Foot == input$Preferred_Foot), extensions = 'Buttons', 
+              options = list(
+                  dom = 'Blfrtip', buttons = c('csv','excel','pdf')
+              ))})
+```
+
+
+Map
+==================================================================
+
+### World map showing each country with the number of FIFA players
+
+
+```{r}
+
+# Showing the World Map with all the countries and using the highlight method to show the number of FIFA players from each country.
+
+map_ire1 <- get_data_from_map(download_map_data("https://code.highcharts.com/mapdata/custom/world-palestine-highres.js"))
+```
+
+
+```{r}
+state1 <- map_ire1 %>%
+  select(`hc-a2`) %>%
+  arrange(`hc-a2`)
+
+
+```
+
+```{r}
+players <- mydata%>%
+  group_by(Country_code)%>%
+  summarise(total = n())
+
+
+```
+
+
+
+```{r}
+hcmap("https://code.highcharts.com/mapdata/custom/world-palestine-highres.js", data = players, value = "total",
+      joinBy = c("hc-a2","Country_code"),
+      name = "Number of Players",
+      dataLabels= list(enabled = TRUE, format= '{point.name}'),
+      borderColor = "#FAFAFA", borderWidth  = 0.1,
+      tooltip = list(valueDecimals = 0))
+```
+
+
+
