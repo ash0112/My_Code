@@ -1,0 +1,300 @@
+---
+title: Data Visualisation and Insight - Assessment 3
+author: 'Ashwin Vijayan Pillai'
+date: "08/01/2020"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    code_folding: show
+    highlight: tango
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+---
+
+
+# 1.Introduction:
+
+Vaccination also is known as immunization is one of the cost-effective methods of disease prevention. Over the past decade, the coverage of vaccination has increased significantly, helping to reduce disease. The global coverage of vaccination has been higher than 80%, but not adequate, according to the WHO.By introducing weakened or killed pathogens, vaccines help us to create an individual's immunity (Vanderslott, Dadonaite and Roser, 2020).
+
+As part of this analysis, we have considered below four vaccines:
+
+1) Bacillus Calmette-Guérin (BCG) vaccine:
+It is used for tuberculosis (TB) prevention. This is one of the global region-based WHO's most approved vaccines. It is most widespread in the areas of Latin America, Africa, and Asia. It is the most common disease among homeless people in the United States, so it is limited to specific persons (Cdc.gov, 2020).
+
+2) Measles-containing-vaccine first-dose (MCV1) vaccine:
+It is one of the very contagious diseases which is spread through the air.  It is given in the format of two doses. The current coverage of this vaccine is around 86 percent(Cdc.gov, 2020).
+
+3) Inactivated polio vaccine (IPV) vaccine:
+It is considered to be a deadly disease caused by the poliovirus.  It is also offered in the Oral vaccine package. The polio vaccine is the highest group vaccine in the global regions during the past decade. This contributed to a 99 percent reduction in paralysis caused by the poliovirus (Cdc.gov, 2020).
+
+4) Yellow fever vaccine (YFV) vaccine:
+It is common in the region of Latin America and Africa.  It is transmitted through infected mosquitoes. The current coverage is 49 percent, which is much lower than the criteria predicted (Cdc.gov, 2020).
+
+
+# 2.Rationale:
+
+In the modern world, where we boast of having the best health care, the deaths due to diseases are still a major concern. As vaccines are being developed for all major diseases, the most important question is whether these vaccines are available to the ordinary people.
+
+# 3.Dataset & variables:
+
+The dataset is obtained from UNICEF database. We have considered four vaccines and is having the data from 1980 till 2018 based on the different regions (UNICEF DATA, 2020).
+
+
+# 4.Research Question:
+
+How far has the vaccination reached globally?
+
+# 5.Data Analysis:
+
+##Libraries
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(forcats)
+library(ggplot2)
+library(plotly)
+library(stringr)
+```
+
+
+
+## 5.1 Importing the Dataset
+```{r}
+graph1 <- read.csv("D:/DSc/R/Assessment 3/immune1.csv")
+
+```
+
+
+
+## 5.2 Region wise vaccine availability
+```{r}
+
+value1 <- graph1%>%
+  group_by(unicef_region,country,vaccine)%>%
+  summarise(total_coverage=sum(X2018,X2017,X2016,X2015,X2014,X2013,X2012,X2011,X2010,X2009,X2008))
+
+graph_plot1 <- ggplot(value1,aes(unicef_region))+geom_bar(aes(fill=unicef_region))+coord_flip()+labs(title="Region wise vaccine availability",y='Coverage')
+
+graph_plot1
+```
+
+
+
+## 5.3 Global Vaccine coverage
+```{r}
+graph_plot2 <- ggplot(graph1,aes(vaccine))+geom_bar(aes(fill=vaccine))+coord_flip()+labs(title="Global Vaccine coverage",y='Vaccine count')
+
+
+graph_plot2
+```
+
+
+
+## 5.4 Year wise progress
+```{r}
+
+par(mfrow=c(2,2))
+
+ggplot(graph1,aes(X2007))+geom_histogram(aes(fill = vaccine))+labs(title="2007 progress graph",y='2007 Vaccine count')
+
+
+ggplot(graph1,aes(X2008))+geom_histogram(aes(fill = vaccine))+labs(title="2008 progress graph",y='2008 Vaccine count')
+ggplot(graph1,aes(X2017))+geom_histogram(aes(fill = vaccine))+labs(title="2017 progress graph",y='2017 Vaccine count')
+
+ggplot(graph1,aes(X2018))+geom_histogram(aes(fill = vaccine))+labs(title="2018 progress graph",y='2018 Vaccine count')
+
+
+```
+
+
+
+## 5.5 Vaccination progress graph for the past decade
+```{r}
+par(mfrow=c(1,2))
+ggplot(graph1,aes(X2008))+geom_area(stat = 'bin',aes(fill=vaccine))+labs(title="2008 vaccination progress graph")
+ggplot(graph1,aes(X2018))+geom_area(stat = 'bin',aes(fill=vaccine))+labs(title="2018 vaccination progress graph")
+```
+
+
+
+## 5.6 Vaccine growth graph
+```{r}
+graph_plot3 <- graph1%>%
+  filter(X2008==0, X2018!=0)
+
+ggplot(graph_plot3,aes(X2018))+geom_area(stat = 'bin',aes(fill=vaccine))+labs(title="Vaccine which increased in the last decade")
+
+
+```
+
+
+
+## 5.7 Global regions with Polio vaccine availability
+```{r}
+graph_plot4 <- graph_plot3%>%
+  filter(vaccine=='IPV1')
+
+ggplot(graph_plot4,aes(unicef_region))+geom_bar(aes(fill=vaccine))+coord_flip()+labs(title="Global regions with Polio vaccine availability",y='Polio vaccine growth count')
+```
+
+
+
+
+## 5.8 Vaccine with zero coverage in 2018
+```{r}
+graph_plot5 <- graph1%>%
+  filter(X2018==0)
+
+par(mfrow=c(1,2))
+
+ggplot(graph_plot5,aes(vaccine))+geom_bar(position='stack',aes(fill=unicef_region))+coord_flip()+labs(title="Vaccine with zero coverage in 2018",y='2018 lagging vaccine count')
+
+ggplot(graph_plot5,aes(country))+geom_bar(position='stack',aes(fill=unicef_region))+coord_flip()+labs(title="Countries with zero vaccine coverage")
+```
+
+
+
+
+## 5.9 Countries with zero BCG vaccine coverage
+```{r}
+a <- graph1%>%
+  filter(X2018==0,vaccine=='BCG')
+
+ggplot(a,aes(country))+geom_bar(aes(fill=unicef_region))+coord_flip()+labs(title="Countries with zero BCG vaccine coverage")
+```
+
+
+
+## 5.10 Yellow fever vaccine analysis
+```{r}
+graph_plot6 <- graph1%>%
+  filter(vaccine =='YFV')
+
+par(mfrow=c(1,3))
+
+ggplot(graph_plot6,aes(unicef_region))+geom_bar(aes(fill=vaccine))+coord_flip()+labs(title="Regions with Yellow fever coverage",y='Yellow fever count')
+ggplot(graph_plot6,aes(X2008,unicef_region,color=unicef_region))+geom_point()+labs(title="Point graph of regions with Yellow fever coverage for 2008")
+ggplot(graph_plot6,aes(X2018,unicef_region,color=unicef_region))+geom_point()+labs(title="Point graph of regions with Yellow fever coverage for 2018")
+
+
+
+```
+
+
+
+
+## 5.11 Region wise Yellow fever analysis
+```{r}
+graph_plot7 <- graph1%>%
+  filter(graph1$vaccine == 'YFV')
+
+par(mfrow=c(1,2))
+
+ggplot(graph_plot7,aes(X2008))+geom_histogram(aes(fill = unicef_region))+labs(title="Regions with Yellow fever coverage for 2008")
+ggplot(graph_plot7,aes(X2018))+geom_histogram(aes(fill = unicef_region))+labs(title="Latest region coverage details for Yellow fever")
+
+
+```
+
+
+
+## 5.12 Yellow fever analysis for Latin American and African regions
+```{r}
+graph_plot8 <- graph1%>%
+  filter(X2018==0, vaccine =='YFV', unicef_region%in%c('Middle East & North Africa','Eastern & Southern Africa','Latin America & Caribbean','West & Central Africa'))
+
+ggplot(graph_plot8,aes(country))+geom_bar(aes(fill=unicef_region))+coord_flip()+labs(title="African countries which is having zero Yellow fever availability")
+```
+
+
+
+
+## 5.13 Analysis for Indian vaccination 
+```{r}
+graph_plot9 <- graph1%>%
+  filter(country=='India')
+
+par(mfrow=c(1,2))
+ggplot(graph_plot9,aes(vaccine))+geom_bar(aes(fill=vaccine))+theme_bw()+labs(title="Indian vaccination availability")
+ggplot(graph_plot9,aes(X2018))+geom_density(kernel='gaussian',aes(fill=unicef_region))
+
+
+```
+
+
+
+## 5.14 Analysis for Ireland vaccination 
+```{r}
+graph_plot10 <- graph1%>%
+  filter(country=='Ireland')
+
+par(mfrow=c(1,2))
+library(plotrix)
+pie3D(graph_plot10$X2018, labels = graph_plot10$vaccine, explode = 0.5, main="Pie Chart of Ireland Vaccines")
+ggplot(graph_plot10,aes(vaccine,X2018))+geom_point()+theme_bw()+geom_col(aes(fill=vaccine))+labs(title="Ireland vaccination availability")
+
+```
+
+
+
+
+## 5.15 Polio vaccine growth analysis for the last decade
+```{r}
+graph_plot11 <- graph1%>%
+  group_by(vaccine)%>%
+  summarise(s_X2018=sum(X2018),s_X2017=sum(X2017),s_X2016=sum(X2016),s_X2015=sum(X2015),s_X2014=sum(X2014),s_X2013=sum(X2013),s_X2012=sum(X2012),s_X2011=sum(X2011),s_X2010=sum(X2010,na.rm=TRUE),s_X2009=sum(X2009,na.rm=TRUE),s_X2008=sum(X2008,na.rm=TRUE))
+
+graph_plot11_1 <- as.data.frame(t(graph_plot11))
+
+names(graph_plot11_1) <- lapply(graph_plot11_1[1, ], as.character)
+
+graph_plot11_1 <- graph_plot11_1[-1,]
+
+val12 <- c(2018,2017,2016,2015,2014,2013,2012,2011,2010,2009,2008)
+
+graph_plot11_11 <- cbind(graph_plot11_1,val12)
+
+colnames(graph_plot11_11) <- c('BCG','IPV1','MCV1','YFV','Year')
+
+ggplot(graph_plot11_11,aes(Year,IPV1))+geom_col(aes(fill=Year))+geom_line()+labs(title='Increase of Polio vaccine in the last decade')
+```
+
+
+
+# 6.Reference:
+
+
+Who.int. (2020). WHO | Yellow fever : a current threat. [online] Available at: https://www.who.int/csr/disease/yellowfev/impact1/en/ [Accessed 6 Jan. 2020].
+
+Who.int. (2020). The many challenges to fighting yellow fever in Democratic Republic of the Congo. [online] Available at: https://www.who.int/news-room/feature-stories/detail/the-many-challenges-to-fighting-yellow-fever-in-democratic-republic-of-the-congo [Accessed 6 Jan. 2020].
+
+Cdc.gov. (2020). Vaccine Information Statement | Yellow Fever | VIS | CDC. [online] Available at: https://www.cdc.gov/vaccines/hcp/vis/vis-statements/yf.html [Accessed 6 Jan. 2020].
+
+Peckel, L. (2020). A New Generation of Challenges for the Traditional Yellow Fever Vaccine - Infectious Disease Advisor. [online] Infectious Disease Advisor. Available at: https://www.infectiousdiseaseadvisor.com/home/topics/vector-borne-illnesses/a-new-generation-of-challenges-for-the-traditional-yellow-fever-vaccine/ [Accessed 5 Jan. 2020].
+
+UNICEF DATA. (2020). Immunization data - UNICEF DATA. [online] Available at: https://data.unicef.org/resources/dataset/immunization/ [Accessed 6 Jan. 2020].
+
+Cdc.gov. (2020). CDC Global Health - Polio - Our Progress. [online] Available at: https://www.cdc.gov/polio/progress/index.htm [Accessed 7 Jan. 2020].
+
+Vanderslott, S., Dadonaite, B. and Roser, M. (2020). Vaccination. [online] Our World in Data. Available at: https://ourworldindata.org/vaccination#summary [Accessed 8 Jan. 2020].
+
+
+
+
+
+[r python interface](https://rstudio.github.io/reticulate/)
+
+
+
+
+
+
+
+
+
+
+
+
+
