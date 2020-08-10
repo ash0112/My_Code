@@ -1,0 +1,418 @@
+---
+title: "Untitled"
+author: "Ashwin"
+date: "22/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+
+```{r setup, include=FALSE}
+
+# Including all the necessary libraries.
+
+library(flexdashboard)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(forcats)
+library(highcharter)
+library(openintro)
+library(fmsb)
+library(likert)
+```
+
+
+
+
+
+```{r}
+# Importing the Roadway data
+
+d1 <- read.csv('roadway1.csv')
+d2 <- read.csv('roadway2.csv')
+```
+
+```{r}
+
+# Analysing the growth of Cars and Two-wheelers in India 
+
+new <- d2%>%
+    filter(Types %in% c('Two-Wheeler','Cars'))
+fig1 <- plot_ly(new, x = new$X2016, y = new$State..Union.Territory, type = 'bar', orientation = 'h',color = new$Types)
+#fig1 <- fig1 %>% add_trace(pune, x = pune$Year, y = pune$Percent, name = 'Pune', color = "#FF9999")
+fig1 <- fig1 %>% layout(barmode = 'stack', title = 'Statewise Registration of cars and two-wheelers', xaxis =  list(title= 'Number of vehicles registered'), yaxis = list(title = 'States/UT India'))
+  
+fig1
+```
+
+
+
+
+
+
+```{r}
+d1%>%
+  filter(Types == 'Buses')
+```
+
+
+
+
+Map
+==================================================================
+
+```{r}
+map_ire1 <- get_data_from_map(download_map_data("https://code.highcharts.com/mapdata/countries/in/custom/in-all-andaman-and-nicobar.js"))
+
+
+
+```
+
+
+
+```{r}
+state1 <- map_ire1 %>%
+  select(`hc-a2`) %>%
+  arrange(`hc-a2`)
+
+
+```
+
+```{r}
+Buses <- d1%>%
+  filter(Types == 'Buses')%>%
+  select(StateCode, X2016)
+```
+
+
+```{r}
+
+# Graphical representation of the states with maximum number of registered Buses in India.
+
+hcmap("https://code.highcharts.com/mapdata/countries/in/custom/in-all-andaman-and-nicobar.js", data = Buses, value = "X2016",
+      joinBy = c("hc-a2","StateCode"),
+      name = "Number of Buses Registered", color = 'X2016',
+      dataLabels= list(enabled = TRUE, format= '{point.name}'),
+      borderColor = "#FAFAFA", borderWidth  = 0.1,
+      tooltip = list(valueDecimals = 0))
+```
+
+
+```{r}
+
+# Importing the Rod accidents dataset.
+
+data <- read.csv('Road-Accidents-2018-Table-4.1.csv')
+data <- data[-37,][-1]
+```
+
+
+```{r}
+
+# Visual representation of all the number of accidents in each State.
+
+fig1 <- plot_ly(data, x = data$Total.Number.of.Road.Accidents.Occurred.in.States.UTs...2018, y = data$States.UTs, type = 'bar', orientation = 'h', color = '#FF9999')
+#fig1 <- fig1 %>% add_trace(pune, x = pune$Year, y = pune$Percent, name = 'Pune', color = "#FF9999")
+fig1 <- fig1 %>% layout( title = 'Number of accidents in 2018', xaxis =  list(title= 'Number of accidents occured'), yaxis = list(title = 'States/UT India'))
+  
+fig1
+```
+
+
+```{r}
+
+# Growth of accidents when comparing 2017 and 2018 accident numbers for each State.
+
+data1 <- data%>%
+  filter(data$States.UTs != 'Lakshadweep')
+
+fig1 <- plot_ly(data, x = data1$X..Increase.in.2018.over.2017, y = data1$States.UTs, type = 'bar', orientation = 'h', color = '#FF9999')
+#fig1 <- fig1 %>% add_trace(pune, x = pune$Year, y = pune$Percent, name = 'Pune', color = "#FF9999")
+fig1 <- fig1 %>% layout( title = 'Comparison of 2017 and 2018 accidents in India.', xaxis =  list(title= 'Number of accidents occured'), yaxis = list(title = 'States/UT India'))
+  
+fig1
+```
+
+
+
+```{r}
+
+# Importing the National Highway traffic in the country.
+
+data <- read.csv('Road_Transport_Year_Book_2016-17_Annexure_1.1.csv')
+
+data <- data[-18,]
+
+# Changing the format of certain coulmns in the dataset.
+str(data)
+data$Year = as.integer(as.character(data$Year))
+```
+
+
+
+```{r}
+
+fig <- plot_ly(
+  data, y = data$Number.of.cars..in.thousands. , x = data$Year,
+  color = data$Number.of.cars..in.thousands., type = 'scatter', name = 'Cars', mode = 'lines+markers'
+)
+
+
+fig <- fig %>% add_trace(y = data$Number.of.buses..in.thousands., name = 'Buses', mode = 'lines+markers')
+fig <- fig %>% layout( title = 'Number of cars/buses travelling through the National Highway', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Cars/Buses'))
+
+fig
+```
+
+
+```{r}
+str(data)
+```
+
+==========================================================================
+```{r}
+val <- d2%>%
+  filter(Types == 'Cars')%>%
+  select(States, X2016, Types)%>%
+  arrange(desc(X2016))%>%
+  head(5)
+  
+```
+
+```{r}
+d2_types <- unique(d2$Types)
+d2_types <- as.character(d2_types)
+
+d1_types <- unique(d1$Types)
+d1_types <- as.character(d1_types)
+```
+
+```{r}
+val <- data.frame(States = character(),
+                 Numbers_2016=integer(),
+                 Types = character(),stringsAsFactors=FALSE)
+
+for (i in d2_types)
+{
+
+    x <- d2%>%
+      filter(Types == i)%>%
+      select(States, X2016, Types)%>%
+      arrange(desc(X2016))%>%
+      head(5)
+    val <- rbind(val, x)
+
+}
+
+
+fig <- plot_ly(
+  val, y = val$X2016 , x = val$Types,
+  color = val$State..Union.Territory, size = ~X2016, type = 'bar'
+)
+
+fig
+```
+
+
+```{r}
+val <- data.frame(States = character(),
+                 Numbers_2016=integer(),
+                 Types = character(),stringsAsFactors=FALSE)
+
+for (i in d1_types)
+{
+
+    x <- d1%>%
+      filter(Types == i)%>%
+      select(States, X2016, Types)%>%
+      arrange(desc(X2016))%>%
+      head(5)
+    val <- rbind(val, x)
+
+}
+
+
+fig <- plot_ly(
+  val, y = val$X2016 , x = val$Types,
+  color = val$States, size = ~X2016, type = 'bar'
+)
+
+fig
+```
+
+
+```{r}
+
+railway <- read.csv('Final_table.csv')
+```
+
+```{r}
+# Analysing the state which has the highest long-distnace running trains.
+
+sample <- railway%>%
+  filter(Distance > 1000)%>%
+  group_by(SourceStationName, State)%>%
+  summarise(count = n())%>%
+  arrange(desc(count))%>%
+  head(20)
+
+fig <- plot_ly(y = sample$State, x = sample$count, type = "bar", orientation = 'h', color = '#00FF00')
+fig <- fig %>% layout(barmode = 'stack',
+         xaxis = list(title = "Number of trains"),
+         yaxis = list(title ="State of Origination"))
+fig
+
+```
+
+
+```{r}
+new <- d1%>%
+  filter(States %in% c('Assam','Arunachal Pradesh','Manipur','Mizoram','Tripura','Meghalaya'))
+
+new1 <- d2%>%
+  filter(States %in% c('Assam','Arunachal Pradesh','Manipur','Mizoram','Tripura','Meghalaya'))
+
+par(mfrow=c(1,2))
+fig <- plot_ly(new, x = new$Types , y = new$X2016, type = 'bar',  color = new$States)
+fig1 <- plot_ly(new1, x = new1$Types , y = new1$X2016, type = 'bar',  color = new1$State.UnionTerritory)
+fig
+fig1
+
+```
+
+
+```{r}
+data <- read.csv('Railway Traffic and Earnings Passengers Originating1.csv')
+
+
+data$Total <- data$Jan+data$Feb+data$Mar+data$Apr+data$May+data$Jun+data$Jul+data$Aug+data$Sep+data$Oct+data$Nov+data$Dec
+```
+
+
+```{r}
+fig <- plot_ly(
+  data, x = ~Year, y = ~Total,
+  color = ~Year, size = ~Total, type = 'scatter', name = 'Cars', mode = 'lines+markers'
+)
+
+fig
+```
+
+
+
+```{r}
+
+# Analysis of the number of buses registered in the country.
+
+bus <- d1%>%
+  filter(Types == 'Buses')%>%
+  select(States,X2009,   X2010,   X2011,   X2012 ,  X2013,   X2014 ,  X2015,   X2016)
+
+sum <- colSums(bus[,2:9])
+
+bus_sum.t <- data.frame(as.integer(sum))
+colnames(bus_sum.t) <- ('Regustered_Vehicles')
+
+bus_sum.t$Year <- c(2009,2010,2011,2012,2013,2014,2015,2016)
+bus_sum.t
+
+fig1 <- plot_ly(bus_sum.t, x = bus_sum.t$Year , y = bus_sum.t$Regustered_Vehicles, type = 'scatter', name = "Buses", color = "#00FF00", mode = 'lines+markers')
+fig1 <- fig1 %>% layout(title = 'Number of Buses registered all over the country', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Buses'))
+
+fig1
+```
+
+
+```{r}
+
+# Analysis of the number of Cars and two-wheelers registered in the Northeast part of the country.
+
+
+personal <- d2%>%
+  filter(Types %in% c('Cars','Two-Wheeler'))%>%
+  select(States,X2009,   X2010,   X2011,   X2012 ,  X2013,   X2014 ,  X2015,   X2016)
+
+sum <- colSums(personal[,2:9])
+
+personal_sum.t <- data.frame(as.integer(sum))
+colnames(personal_sum.t) <- ('Regustered_Vehicles')
+
+personal_sum.t$Year <- c(2009,2010,2011,2012,2013,2014,2015,2016)
+personal_sum.t
+
+fig1 <- plot_ly(personal_sum.t, x = personal_sum.t$Year , y = personal_sum.t$Regustered_Vehicles, type = 'scatter', name = "Cars & Bikes", color = "#00FF00", mode = 'lines+markers')
+fig1 <- fig1 %>% layout(title = 'Number of cars and bikes registered all over the country', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of personal vehicles'))
+
+fig1
+```
+
+
+```{r}
+d1$States <- as.character(d1$States)
+d2$States <- as.character(d2$States)
+
+
+new <- d1%>%
+  filter(States %in% c('Assam','ArunachalPradesh','Manipur','Mizoram','Tripura','Meghalaya','Sikkim','Nagaland') & Types == 'Buses')%>%
+  select(States,X2009,   X2010,   X2011,   X2012 ,  X2013,   X2014 ,  X2015,   X2016)
+
+new1 <- d2%>%
+  filter(States %in% c('Assam','ArunachalPradesh','Manipur','Mizoram','Tripura','Meghalaya','Sikkim','Nagaland') & Types %in% c('Cars','Two-Wheeler'))%>%
+  select(States,X2009,   X2010,   X2011,   X2012 ,  X2013,   X2014 ,  X2015,   X2016)
+```
+
+
+
+```{r}
+sample <- rbind(new, new1)
+```
+
+```{r}
+sample%>%
+  filter(States == 'Assam')
+```
+
+
+```{r}
+sum <- colSums(new[,2:9])
+
+sample.t <- data.frame(as.integer(sum))
+colnames(sample.t) <- ('Regustered_Vehicles')
+
+sample.t$Year <- c(2009,2010,2011,2012,2013,2014,2015,2016)
+sample.t
+
+fig1 <- plot_ly(sample.t, x = sample.t$Year , y = sample.t$Regustered_Vehicles, type = 'scatter', name = 'Vehicles', color = "#00FF00", mode = 'lines+markers')
+fig1 <- fig1 %>% layout(title = 'Number of Buses registered in Northeast India', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of public buses'))
+
+fig1
+```
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

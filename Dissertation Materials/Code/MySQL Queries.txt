@@ -1,0 +1,89 @@
+
+Note:
+
+1) Railway Traffic and Earnings Passengers Originating (Excel file) was uploaded into table 'college.train'.
+
+2) StateCode (csv file) was uploaded into table 'college.statecode'.
+
+3) StationList (csv file) was uploaded into table 'college.train1'.
+
+=============================================================================================
+
+# Creating a separate table with required information from all the above tables:
+
+create table college.sample1 (select a.TrainNo, a.SourceStationName, a.DestinationStationName,
+a.SourceStation, max(Distance) as Distance
+from college.train a
+group by a.TrainNo, a.SourceStationName, a.DestinationStationName, a.SourceStation);
+
+---------------------------------------------------------------------------------------------
+
+create table college.sample2 (select a.TrainNo, a.SourceStationName, a.DestinationStationName,
+b.State, b.RailwayZone,c.Abbreviation, a.Distance,a.SourceStation
+from college.sample1 a
+left join college.train1 b on b.StationCode = a.SourceStation
+left join college.statecode c on c.StateName = b.State);
+
+=============================================================================================
+
+# Validating the above created tables:
+
+select State, count(*) as Count from college.sample2
+group by State
+order by Count desc;
+
+=============================================================================================
+
+# Cleaning the required data for particular analysis.
+
+update college.sample2 set State = 'Maharashtra', RailwayZone = 'CR/Central',
+Abbreviation = 'MH' where SourceStation  = 'PUNE';
+
+---------------------------------------------------------------------------------------------
+
+update college.sample2 set Abbreviation = 'DL' 
+where State = 'Delhi';
+
+---------------------------------------------------------------------------------------------
+
+update college.sample2 set State = 'Kerala', RailwayZone = 'SR/Southern',
+Abbreviation = 'KL'
+where State = 'Kerala' or SourceStationName in 
+('CALICUT','ERNAKULAM. JN','KANNUR','KASARAGOD',
+'KAYANKULAM JN','KOCHUVELI','PALAKKAD JN','PALGHAT TOWN',
+'TRIVANDRUM CENTRAL');
+
+--------------------------------------------------------------------------------------------
+
+update college.sample2 set State = 'Tamil Nadu', RailwayZone = 'SR/Southern',
+Abbreviation = 'TN' where SourceStationName = 'KANNIYAKUMARI';
+
+-------------------------------------------------------------------------------------------
+
+update college.sample2 set State = 'Maharashtra', RailwayZone = 'CR/Central',
+Abbreviation = 'MH' where SourceStationName in ('DAUND JN.','NAGPUR JN.(CR)','SOLAPUR');
+
+-------------------------------------------------------------------------------------------
+
+update college.sample  set RailwayZone = 'NFR/Northeast Frontier Railway'
+where RailwayZone = 'NFR/Northeast Frontier';
+
+------------------------------------------------------------------------------------------
+
+# Validating the detaails after cleaning the data.
+
+select * from college.sample where SourceStationName = 'BUDGAM';
+update college.sample set RailwayZone = 'NR/Northern Railways'
+ where SourceStationName = 'BUDGAM';
+
+------------------------------------------------------------------------------------------
+
+select * from college.sample
+where RailwayZone in
+('Northern',
+'Northern Railways',
+'NR/Northern',
+'NR/Northern Railways') or SourceStationName = 'JAMMU TAWI';
+
+==========================================================================================
+

@@ -1,0 +1,401 @@
+---
+title: "Airports"
+author: "Ashwin"
+date: "18/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+
+
+```{r setup, include=FALSE}
+
+# Including all the necessary libraries.
+
+library(flexdashboard)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(forcats)
+library(highcharter)
+library(openintro)
+```
+
+```{r}
+# Importing the Airway dataset
+
+data <- read.csv('Airports.csv')
+
+```
+
+
+```{r}
+
+# Analysing the data for Mumbai Airport
+
+
+sample <- data%>%
+  filter(Airports1 == 'MUMBAI')%>%
+  group_by(YearNo)%>%
+  summarise(Total_Jan = sum(Jan), Total_Feb = sum(Feb), Total_Mar = sum(Mar),
+            Total_Apr = sum(Apr), Total_May = sum(May), Total_Jun = sum(Jun),
+            Total_Jul = sum(Jul), Total_Aug = sum(Aug), Total_Sep = sum(Sep),
+            Total_Oct = sum(Oct), Total_Nov = sum(Nov), Total_Dec = sum(Dec))
+```
+
+
+```{r}
+
+
+fig <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Jan, type = 'bar', name = "Jan", color = "#00FF00")
+fig <- fig %>% add_trace(y = sample$Total_Feb, name = 'Feb', color = "#FF9999")
+fig <- fig %>% add_trace(y = sample$Total_Mar, name = 'Mar', color = "#FF6666")
+#fig <- fig %>% add_trace(y = sample$Total_Apr, name = 'Apr', color = "#009933")
+
+fig
+```
+
+
+```{r}
+fig1 <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Apr, type = 'bar', name = "Apr", color = "#00FF00")
+fig1 <- fig1 %>% add_trace(y = sample$Total_May, name = 'May', color = "#FF9999")
+fig1 <- fig1 %>% add_trace(y = sample$Total_Jun, name = 'Jun', color = "#FF6666")
+#fig1 <- fig %>% add_trace(y = sample$Total_Jul, name = 'Jul', color = "#009933")
+
+fig1
+```
+
+
+```{r}
+fig2 <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Jul, type = 'bar', name = "Jul", color = "#00FF00")
+fig2 <- fig2%>% add_trace(y = sample$Total_Aug, name = 'Aug', color = "#FF9999")
+fig2 <- fig2 %>% add_trace(y = sample$Total_Sep, name = 'Sep', color = "#FF6666")
+#fig1 <- fig %>% add_trace(y = sample$Total_Jul, name = 'Jul', color = "#009933")
+
+fig2
+
+```
+
+
+
+```{r}
+fig3 <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Oct, type = 'bar', name = "Oct", color = "#00FF00")
+fig3 <- fig3 %>% add_trace(y = sample$Total_Nov, name = 'Nov', color = "#FF9999")
+fig3 <-  fig3 %>% add_trace(y = sample$Total_Dec, name = 'Dec', color = "#FF6666")
+#fig1 <- fig %>% add_trace(y = sample$Total_Jul, name = 'Jul', color = "#009933")
+
+fig3 <- fig3 %>% layout(title = 'Quarter 4', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+
+
+fig3
+
+
+
+
+```
+
+
+```{r}
+# Ploting the bar graph for passenger count in each Quarter traveling from Mumbai airport.
+
+
+par(mfrow=c(2,2))
+fig <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Jan, type = 'bar', name = "Jan", color = "#00FF00")
+fig <- fig %>% add_trace(y = sample$Total_Feb, name = 'Feb', color = "#FF9999")
+fig <- fig %>% add_trace(y = sample$Total_Mar, name = 'Mar', color = "#FF6666")
+fig <- fig %>% layout(title = 'Quarter 1', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig
+
+
+fig1 <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Apr, type = 'bar', name = "Apr", color = "#00FF00")
+fig1 <- fig1 %>% add_trace(y = sample$Total_May, name = 'May', color = "#FF9999")
+fig1 <- fig1 %>% add_trace(y = sample$Total_Jun, name = 'Jun', color = "#FF6666")
+fig1 <- fig1 %>% layout(title = 'Quarter 2', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig1
+
+
+fig2 <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Jul, type = 'bar', name = "Jul", color = "#00FF00")
+fig2 <- fig2%>% add_trace(y = sample$Total_Aug, name = 'Aug', color = "#FF9999")
+fig2 <- fig2 %>% add_trace(y = sample$Total_Sep, name = 'Sep', color = "#FF6666")
+fig2 <- fig2 %>% layout(title = 'Quarter 3', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig2
+
+fig3 <- plot_ly(sample, x = sample$YearNo , y = sample$Total_Oct, type = 'bar', name = "Oct", color = "#00FF00")
+fig3 <- fig3 %>% add_trace(y = sample$Total_Nov, name = 'Nov', color = "#FF9999")
+fig3 <-  fig3 %>% add_trace(y = sample$Total_Dec, name = 'Dec', color = "#FF6666")
+fig3 <- fig3 %>% layout(title = 'Quarter 4', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig3
+
+```
+
+
+```{r}
+# Dataset of the passengers traveling in each of the domestic airlines operating in India.
+
+sample <- read.csv('Airlines.csv')
+```
+
+
+```{r}
+# An overview of each airline with their passenger count.
+
+plot1 <- plot_ly(sample, x = sample$ï..Airline , y = sample$Total, type = 'bar')
+plot1 <- plot1 %>% layout(title = 'Domestic Airlines in India', xaxis =  list(title= 'Airlines'), yaxis = list(title = 'Number of Passengers(in mn.)'))
+
+plot1
+```
+
+
+### Delhi Data
+
+```{r}
+# Anlysing the traffic of one of the Joint Venture airports in the country. In this case we have considered Delhi airport.
+
+data <- read.csv('DelhiTraffic.csv')
+
+```
+
+
+```{r}
+# Calculating the Quarter wise data.
+
+data$Quarter1 <- data$Jan+data$Feb+data$Mar
+data$Quarter2 <- data$Apr+data$May+data$Jun
+data$Quarter3 <- data$Jul+data$Aug+data$Sep
+data$Quarter4 <- data$Oct+data$Nov+data$Dec
+```
+
+
+
+```{r}
+# Separating the data before and after 2006. The year when the operation of the airport was given to private company.
+
+x1 <- data%>%
+  filter(Year<2007)
+
+x2 <- data%>%
+  filter(Year>2006)
+```
+
+```{r}
+
+# Analysing the traffic flow from the airport before and after the implementation of the PPP model.
+
+par(mfrow=c(2,2))
+
+
+fig1 <- plot_ly(x1, x = x1$Year , y = x1$Quarter1, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig1 <- fig1 %>% add_trace(x1, x = x2$Year, y = x2$Quarter1, name = 'After 2006', color = "#FF9999")
+fig1 <- fig1 %>% layout(title = 'Quarter 1', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig1
+
+
+fig2 <- plot_ly(x1, x = x1$Year , y = x1$Quarter2, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig2 <- fig2 %>% add_trace(x1, x = x2$Year, y = x2$Quarter2, name = 'After 2006', color = "#FF9999")
+fig2 <- fig2 %>% layout(title = 'Quarter 2', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig2
+
+
+fig3 <- plot_ly(x1, x = x1$Year , y = x1$Quarter3, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig3 <- fig3 %>% add_trace(x1, x = x2$Year, y = x2$Quarter3, name = 'After 2006', color = "#FF9999")
+fig3 <- fig3 %>% layout(title = 'Quarter 3', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig3
+
+fig4 <- plot_ly(x1, x = x1$Year , y = x1$Quarter4, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig4 <- fig4 %>% add_trace(x1, x = x2$Year, y = x2$Quarter4, name = 'After 2006', color = "#FF9999")
+fig4 <- fig4 %>% layout(title = 'Quarter 4', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig4
+```
+
+
+
+### Pune Data
+
+```{r}
+# Analysing the data for a Custom airport.
+
+data <- read.csv('PuneTraffic.csv')
+
+```
+
+
+```{r}
+
+# Calculating the Quarter wise data.
+
+data$Quarter1 <- data$Jan+data$Feb+data$Mar
+data$Quarter2 <- data$Apr+data$May+data$Jun
+data$Quarter3 <- data$Jul+data$Aug+data$Sep
+data$Quarter4 <- data$Oct+data$Nov+data$Dec
+```
+
+
+
+```{r}
+# Comapring the data with the above Joint Venture airport.
+
+x1 <- data%>%
+  filter(Year<2007)
+
+x2 <- data%>%
+  filter(Year>2006)
+```
+
+```{r}
+
+# Analysing the traffic flow from Pune airport 
+
+
+par(mfrow=c(2,2))
+
+
+fig1 <- plot_ly(x1, x = x1$Year , y = x1$Quarter1, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig1 <- fig1 %>% add_trace(x1, x = x2$Year, y = x2$Quarter1, name = 'After 2006', color = "#FF9999")
+fig1 <- fig1 %>% layout(title = 'Quarter 1', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig1
+
+
+fig2 <- plot_ly(x1, x = x1$Year , y = x1$Quarter2, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig2 <- fig2 %>% add_trace(x1, x = x2$Year, y = x2$Quarter2, name = 'After 2006', color = "#FF9999")
+fig2 <- fig2 %>% layout(title = 'Quarter 2', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig2
+
+
+fig3 <- plot_ly(x1, x = x1$Year , y = x1$Quarter3, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig3 <- fig3 %>% add_trace(x1, x = x2$Year, y = x2$Quarter3, name = 'After 2006', color = "#FF9999")
+fig3 <- fig3 %>% layout(title = 'Quarter 3', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig3
+
+fig4 <- plot_ly(x1, x = x1$Year , y = x1$Quarter4, type = 'bar', name = "Before 2006", color = "#00FF00")
+fig4 <- fig4 %>% add_trace(x1, x = x2$Year, y = x2$Quarter4, name = 'After 2006', color = "#FF9999")
+fig4 <- fig4 %>% layout(title = 'Quarter 4', xaxis =  list(title= 'Year'), yaxis = list(title = 'Number of Passengers'))
+fig4
+```
+
+
+
+```{r}
+# Analysing the high traffic airports in the state of Maharashtra.
+
+mum <- read.csv('Mumbai.csv')
+pune <- read.csv('Pune.csv')
+```
+
+
+```{r}
+# Comparison of passenger traffic from Mumbai and Pune airports.
+
+
+fig1 <- plot_ly(mum, x = mum$Year , y = mum$Percent, type = 'bar', name = "Mumbai", color = "#00FF00")
+fig1 <- fig1 %>% add_trace(pune, x = pune$Year, y = pune$Percent, name = 'Pune', color = "#FF9999")
+fig1 <- fig1 %>% layout(title = 'Comparison of Passenger Growth', xaxis =  list(title= 'Year'), yaxis = list(title = 'Increase/Decrease passenger percentage'))
+fig1
+```
+
+```{r}
+fig1 <- plot_ly(mum, x = mum$Year , y = mum$Percent, type = 'scatter', mode = 'lines', name = "Mumbai", color = "#00FF00")
+fig1 <- fig1 %>% add_trace(pune, x = pune$Year, y = pune$Percent, name = 'Pune', color = "#FF9999")
+fig1 <- fig1 %>% layout(title = 'Comparison of Passenger Growth', xaxis =  list(title= 'Year'), yaxis = list(title = 'Increase/Decrease passenger percentage'))
+fig1
+```
+
+
+```{r}
+mum$Total <- mum$Passengers.Jan.+mum$Passengers.Feb.+mum$Passengers.Mar.+mum$Passengers.Apr.+mum$Passengers.May.+mum$Passengers.Jun.+mum$Passengers.Jul.+mum$Passengers.Aug.+mum$Passengers.Sep.+mum$Passengers.Oct.+mum$Passengers.Nov.+mum$Passengers.Dec.
+
+
+pune$Total <- pune$Passengers.Jan.+pune$Passengers.Feb.+pune$Passengers.Mar.+pune$Passengers.Apr.+pune$Passengers.May.+pune$Passengers.Jun.+pune$Passengers.Jul.+pune$Passengers.Aug.+pune$Passengers.Sep.+pune$Passengers.Oct.+pune$Passengers.Nov.+pune$Passengers.Dec.
+```
+
+
+
+```{r}
+# Analysing the most high traffic in all the Government operated airports.
+
+amr <- read.csv('Amritsar.csv') # Paasenger traffic of Amritsar.
+```
+
+
+```{r}
+# Trend analysis of Amritsar airport.
+
+fig1 <- plot_ly(amr, x = amr$Year , y = amr$Percent, type = 'scatter', mode = 'lines+markers', name = "Mumbai", size = amr$Percent) 
+fig1 <- fig1 %>% layout(title = 'Passenger growth at Amritsar Airport', xaxis =  list(title= 'Year'), yaxis = list(title = 'Increase/Decrease passenger percentage'))
+
+
+fig1
+```
+
+
+```{r}
+fig <- plot_ly(amr, x = amr$Year , y = amr$Percent, type = 'scatter', mode = 'lines')
+fig <- fig %>% add_trace(x = ~c(amr$Year[4], amr$Year[7]), y = ~c(amr$Percent[4], amr$Percent[7]), type = 'scatter', mode = 'markers', marker = list(color = 'rgba(67,67,67,1)', size = 15)) 
+
+fig
+```
+
+
+
+```{r}
+
+# Analysing the airway passenger traffic in the Northeast India.
+
+northeast <- read.csv('Northeast.csv')
+
+str(northeast)
+northeast$Airports1 <- as.character(northeast$Airports1)
+```
+
+
+```{r}
+fig <- plot_ly(
+  northeast, x = ~Year, y = ~Total,
+  color = ~Airports1, size = ~Total, type = 'scatter', mode = 'lines+markers'
+)
+
+fig
+```
+
+
+```{r}
+# Passenger traffic from all the Joint Venture airports.
+
+jv <- read.csv('JV.csv')
+```
+
+
+```{r}
+fig <- plot_ly(
+  jv, x = ~Year, y = ~Total,
+  color = ~Airports1, size = ~Total, type = 'scatter', mode = 'lines+markers'
+)
+
+fig
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
